@@ -543,7 +543,62 @@ export function getRandomColor() {
 }
 
 export default botConfig;
+const {
+    Client,
+    GatewayIntentBits,
+    SlashCommandBuilder,
+    REST,
+    Routes
+} = require('discord.js');
+require('dotenv').config();
 
+const client = new Client({
+    intents: [GatewayIntentBits.Guilds]
+});
 
+client.once('ready', () => {
+    console.log(`Login sebagai ${client.user.tag}`);
+});
 
+const commands = [
+    new SlashCommandBuilder()
+        .setName('say')
+        .setDescription('Kirim pesan melalui bot')
+        .addStringOption(option =>
+            option
+                .setName('pesan')
+                .setDescription('Pesan yang akan dikirim')
+                .setRequired(true)
+        )
+].map(command => command.toJSON());
 
+const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+
+(async () => {
+    try {
+        await rest.put(
+            Routes.applicationCommands(process.env.CLIENT_ID),
+            { body: commands }
+        );
+        console.log('Slash command berhasil didaftarkan.');
+    } catch (error) {
+        console.error(error);
+    }
+})();
+
+client.on('interactionCreate', async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === 'say') {
+        const pesan = interaction.options.getString('pesan');
+
+        await interaction.reply({
+            content: 'Pesan berhasil dikirim!',
+            ephemeral: true
+        });
+
+        await interaction.channel.send(pesan);
+    }
+});
+
+client.login(process.env.TOKEN);
