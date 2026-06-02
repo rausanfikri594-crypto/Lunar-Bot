@@ -602,3 +602,42 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.login(process.env.TOKEN);
+const {
+    Client,
+    GatewayIntentBits,
+    ChannelType,
+    PermissionsBitField
+} = require("discord.js");
+
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates
+    ]
+});
+
+const CREATE_CHANNEL_ID = "ID_VOICE_CREATE"; // Ganti dengan ID voice channel pemicu
+
+client.on("voiceStateUpdate", async (oldState, newState) => {
+    // Saat user masuk channel pemicu
+    if (newState.channelId === CREATE_CHANNEL_ID) {
+        const channel = await newState.guild.channels.create({
+            name: `${newState.member.user.username}'s Room`,
+            type: ChannelType.GuildVoice,
+            parent: newState.channel.parent
+        });
+
+        await newState.setChannel(channel);
+    }
+
+    // Hapus channel kosong
+    if (
+        oldState.channel &&
+        oldState.channel.members.size === 0 &&
+        oldState.channel.name.endsWith("'s Room")
+    ) {
+        await oldState.channel.delete().catch(() => {});
+    }
+});
+
+client.login("MTUxMDk5NDY0OTM4NzM2ODYxOA.GlpDAT.mo60-tgfarWxFLrq-KlLPdCQsqriWfDTe_HMt4");
